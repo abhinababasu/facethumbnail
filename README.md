@@ -15,7 +15,9 @@ image so that the thumbnail contains the face properly, as follows
 ![Sample Thumbnail](samples/thumbnail_good.jpg "Sample Thumbnail")
 
 
-## Build/Test
+## Using
+
+### Build/Test
 Clone this repo and in the folder run the following commands
 
 ```
@@ -24,3 +26,11 @@ go build .
 go test
 ```
 
+### How Does this work
+This project uses github.com/esimov/pigo/core to detect the face, then generate thumbnail with the detected face centered.
+
+For sample usage see the [test file](facethumbnail_test.go)
+
+### Known issues
+1. Images with multiple faces are not handled yet
+2. Works for only jpeg

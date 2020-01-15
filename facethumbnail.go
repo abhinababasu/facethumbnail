@@ -13,6 +13,7 @@ import (
 	"github.com/oliamb/cutter"
 )
 
+// ResizeImage uses an instance of FaceDetector to detect face in srcPath and generates a thumbnail of size x size in dstPath
 func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
 	file, err := os.Open(srcPath)
 	if err != nil {
@@ -112,7 +113,6 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
 func min(a, b int) (r int) {
 	if a < b {
 		return a
-	} else {
-		return b
 	}
+	return b
 }
