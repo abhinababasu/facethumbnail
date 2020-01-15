@@ -16,7 +16,7 @@ func TestDetectFacesInImageFile(t *testing.T) {
 	faces, err := fd.DetectFacesInImageFile(source)
 
 	if err != nil {
-		t.Errorf("Unexpected error %v", err)
+		t.Fatalf("Unexpected error %v", err)
 	}
 
 	if len(faces) != 1 {
@@ -34,5 +34,17 @@ func TestDetectFacesInImageFile(t *testing.T) {
 	// validate detected face contains these aspects
 	if !lEye.In(face) || !rEye.In(face) || !nose.In(face) || !mouth.In(face) {
 		t.Errorf("Detected face %v is not correct", face)
+	}
+}
+
+func TestResizeImage(t *testing.T) {
+	pwd, _ := os.Getwd()
+	source := path.Join(pwd, "test", "testimage.jpg")
+	destination := "c:\\temp\\out.jpg"
+
+	err := ResizeImage(source, destination, 200)
+
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
 	}
 }
