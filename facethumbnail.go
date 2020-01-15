@@ -2,15 +2,18 @@ package facethumbnail
 
 // TODO: Add the thumbnail logic
 import (
+	"fmt"
+	"image"
 	"image/jpeg"
 	"log"
 	"os"
 
+	//"github.com/nfnt/resize"
 	"github.com/nfnt/resize"
 	"github.com/oliamb/cutter"
 )
 
-func ResizeImage(srcPath, dstPath string, size uint) error {
+func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
 	file, err := os.Open(srcPath)
 	if err != nil {
 		return err
@@ -23,27 +26,75 @@ func ResizeImage(srcPath, dstPath string, size uint) error {
 	}
 
 	file.Close()
-	w := uint(0)
-	h := uint(0)
-	if img.Bounds().Dx() > img.Bounds().Dy() {
-		h = size
-		w = 0
-	} else {
-		w = size
-		h = 0
+
+	log.Printf("Opened image %v or size (%v,%v), cropping to (%v,%v)", srcPath, img.Bounds().Dx(), img.Bounds().Dy(), size, size)
+
+	var faceCenter image.Point
+
+	if fd != nil {
+		faces, err := fd.DetectFacesInImageFile(srcPath)
+		if err != nil {
+			return fmt.Errorf("Face detection failed with %v", err)
+		}
+
+		// TODO: Use Rectangle.Union for all faces?
+		if len(faces) > 0 {
+			// just use the first face
+			face := faces[0]
+			log.Printf("Detected face %v", face)
+
+			x := (face.Min.X + face.Max.X) / 2
+			y := (face.Min.Y + face.Max.Y) / 2
+
+			// center of detected face
+			faceCenter = image.Pt(x, y)
+			log.Printf("Using faceCenter %v", faceCenter)
+
+		}
 	}
 
-	// TODO: Support portrait thumbnail that uses top part of photo
-	// resize to width 1000 using Lanczos resampling
-	// and preserve aspect ratio
+	// In the code below we are attempting to find a square whose center is close to the center of the found face
 
-	resizedImage := resize.Resize(w, h, img, resize.Lanczos3)
-	croppedImg, err := cutter.Crop(resizedImage, cutter.Config{
-		Width:  int(size),
-		Height: int(size),
-		//Anchor: image.Point{100, 100},
-		Mode: cutter.Centered, // optional, default value
-	})
+	// Generate a square image of sizeSquare which is equal to the width or height of the image
+	// whichever is smaller
+	sizeSquare := min(img.Bounds().Dx(), img.Bounds().Dy())
+
+	// X, Y are the left top corner of cropped image of size sizeSquare
+
+	// Attempt to use x so that facecenter.X is exactly at the center of the sizeSquare image
+	x := faceCenter.X - (sizeSquare / 2)
+	// now if x is negative then the center was far to the left, so use x so that we take all of the
+	// image from the very left end
+	if x < 0 {
+		x = 0
+	} else if (x + sizeSquare) > img.Bounds().Dx() {
+		// if x + sizeSquare is beyond the bounds then we need to move x more left so that we can
+		// go till the end of the image and no more
+		x = img.Bounds().Dx() - sizeSquare
+	}
+
+	// same logic as X, but this time for vertical (Y) axis
+	y := faceCenter.Y - (sizeSquare / 2)
+	if y < 0 {
+		y = 0
+	} else if (y + sizeSquare) > img.Bounds().Dy() {
+		y = img.Bounds().Dy() - sizeSquare
+	}
+
+	// Now crop the image with anchor which is the left-top coordinate of the cropped image
+	anchor := image.Pt(x, y)
+	config := cutter.Config{
+		Width:  sizeSquare,
+		Height: sizeSquare,
+		Anchor: anchor,
+		Mode:   cutter.TopLeft, // optional, default value
+	}
+
+	croppedImg, err := cutter.Crop(img, config)
+
+	log.Printf("Log config %+v", config)
+
+	resizedImage := resize.Resize(size, size, croppedImg, resize.Lanczos3)
 
 	out, err := os.Create(dstPath)
 	if err != nil {
@@ -52,8 +103,16 @@ func ResizeImage(srcPath, dstPath string, size uint) error {
 	defer out.Close()
 
 	// write new image to file
-	jpeg.Encode(out, croppedImg, nil)
+	jpeg.Encode(out, resizedImage, nil)
 	log.Printf("Generated %v", dstPath)
 
 	return nil
+}
+
+func min(a, b int) (r int) {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
 }

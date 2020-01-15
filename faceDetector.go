@@ -3,7 +3,6 @@ package facethumbnail
 import (
 	"image"
 	"io/ioutil"
-	"log"
 
 	pigo "github.com/esimov/pigo/core"
 )
@@ -49,14 +48,10 @@ func (fd *FaceDetector) DetectFacesInImageFile(sourceFilePath string) ([]image.R
 
 	faces, err := fd.detectFaces(sourceFilePath)
 	if err != nil {
-		log.Fatalf("Detection error: %v", err)
+		return nil, err
 	}
 
 	rects := fd.generateFaceRects(faces)
-
-	if err != nil {
-		log.Fatalf("Error creating the image output: %s", err)
-	}
 
 	return rects, nil
 }

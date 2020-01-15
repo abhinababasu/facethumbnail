@@ -9,7 +9,7 @@ import (
 
 func TestDetectFacesInImageFile(t *testing.T) {
 	pwd, _ := os.Getwd()
-	source := path.Join(pwd, "test", "testimage.jpg")
+	source := path.Join(pwd, "test", "testimagetall.jpg")
 	cascadeFile := path.Join(pwd, "test", "facefinder")
 
 	fd := GetFaceDetector(cascadeFile, -1, -1)
@@ -37,14 +37,49 @@ func TestDetectFacesInImageFile(t *testing.T) {
 	}
 }
 
-func TestResizeImage(t *testing.T) {
+func TestResizeImageTall(t *testing.T) {
 	pwd, _ := os.Getwd()
-	source := path.Join(pwd, "test", "testimage.jpg")
-	destination := "c:\\temp\\out.jpg"
+	source := path.Join(pwd, "test", "testimagetall.jpg")
+	cascadeFile := path.Join(pwd, "test", "facefinder")
+	destination := testOutputPath("testimagetall_thumb.jpg")
 
-	err := ResizeImage(source, destination, 200)
+	fd := GetFaceDetector(cascadeFile, -1, -1)
+
+	err := ResizeImage(fd, source, destination, 200)
 
 	if err != nil {
 		t.Fatalf("Unexpected error %v", err)
 	}
+
+	// TODO: Add validation that thumbnail indeed has the face in it. Run face detection on thumbnail again?
+	t.Logf("Check generated file %v", destination)
+}
+
+func TestResizeImageWide(t *testing.T) {
+	pwd, _ := os.Getwd()
+	source := path.Join(pwd, "test", "testimagewide.jpg")
+	cascadeFile := path.Join(pwd, "test", "facefinder")
+	destination := testOutputPath("testimagewide_thumb.jpg")
+
+	fd := GetFaceDetector(cascadeFile, -1, -1)
+
+	err := ResizeImage(fd, source, destination, 200)
+
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+
+	// TODO: Add validation that thumbnail indeed has the face in it. Run face detection on thumbnail again?
+	t.Logf("Check generated file %v", destination)
+}
+
+func testOutputPath(fileName string) string {
+	pwd, _ := os.Getwd()
+	destination := path.Join(pwd, "testoutput")
+
+	if _, err := os.Stat(destination); os.IsNotExist(err) {
+		os.MkdirAll(destination, os.ModeDir)
+	}
+
+	return path.Join(destination, fileName)
 }
