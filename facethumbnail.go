@@ -30,29 +30,37 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
 
 	log.Printf("Opened image %v or size (%v,%v), cropping to (%v,%v)", srcPath, img.Bounds().Dx(), img.Bounds().Dy(), size, size)
 
-	var faceCenter image.Point
+	// default center is mid-point of image
+	var faceCenter image.Point = image.Pt(image.Black.Bounds().Dx()/2, image.Black.Bounds().Dy()/2)
 
+	// Now if a face detector is provided and if that detector detects a face use
+	// the center of the detected face to center the thumbnail image
 	if fd != nil {
 		faces, err := fd.DetectFacesInImageFile(srcPath)
 		if err != nil {
 			return fmt.Errorf("Face detection failed with %v", err)
 		}
 
-		// TODO: Use Rectangle.Union for all faces?
-		if len(faces) > 0 {
-			// just use the first face
-			face := faces[0]
+		nFaces := len(faces)
+		log.Printf("Detect %v faces", nFaces)
+
+		largestFaceSize := 0
+
+		for _, face := range faces {
 			log.Printf("Detected face %v", face)
+			faceSize := face.Dx() * face.Dy()
+			if faceSize > largestFaceSize {
+				largestFaceSize = faceSize
+				x := (face.Min.X + face.Max.X) / 2
+				y := (face.Min.Y + face.Max.Y) / 2
 
-			x := (face.Min.X + face.Max.X) / 2
-			y := (face.Min.Y + face.Max.Y) / 2
-
-			// center of detected face
-			faceCenter = image.Pt(x, y)
-			log.Printf("Using faceCenter %v", faceCenter)
-
+				// center of detected face
+				faceCenter = image.Pt(x, y)
+			}
 		}
 	}
+
+	log.Printf("Using faceCenter %v", faceCenter)
 
 	// In the code below we are attempting to find a square whose center is close to the center of the found face
 
