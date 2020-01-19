@@ -13,17 +13,23 @@ import (
 	"github.com/oliamb/cutter"
 )
 
+type ResizeResult struct {
+	Center     image.Point
+	FacesCount int
+}
+
 // ResizeImage uses an instance of FaceDetector to detect face in srcPath and generates a thumbnail of size x size in dstPath
-func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
+func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) (ResizeResult, error) {
+	var result ResizeResult
 	file, err := os.Open(srcPath)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	// decode jpeg into image.Image
 	img, err := jpeg.Decode(file)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	file.Close()
@@ -38,10 +44,11 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
 	if fd != nil {
 		faces, err := fd.DetectFacesInImageFile(srcPath)
 		if err != nil {
-			return fmt.Errorf("Face detection failed with %v", err)
+			return result, fmt.Errorf("Face detection failed with %v", err)
 		}
 
 		nFaces := len(faces)
+		result.FacesCount = nFaces
 		log.Printf("Detect %v faces", nFaces)
 
 		largestFaceSize := 0
@@ -61,6 +68,7 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
 	}
 
 	log.Printf("Using faceCenter %v", faceCenter)
+	result.Center = faceCenter
 
 	// In the code below we are attempting to find a square whose center is close to the center of the found face
 
@@ -107,7 +115,7 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
 
 	out, err := os.Create(dstPath)
 	if err != nil {
-		return err
+		return result, err
 	}
 	defer out.Close()
 
@@ -115,7 +123,7 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
 	jpeg.Encode(out, resizedImage, nil)
 	log.Printf("Generated %v", dstPath)
 
-	return nil
+	return result, nil
 }
 
 func min(a, b int) (r int) {

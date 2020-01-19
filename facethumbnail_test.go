@@ -37,30 +37,13 @@ func TestDetectFacesInImageFile(t *testing.T) {
 	}
 }
 
-func runTestImage(srcPath, dstPath string, t *testing.T) {
-	pwd, _ := os.Getwd()
-	cascadeFile := path.Join(pwd, "test", "facefinder")
-
-	fd := GetFaceDetector(cascadeFile, -1, -1)
-
-	err := ResizeImage(fd, srcPath, dstPath, 200)
-
-	if err != nil {
-		t.Fatalf("Unexpected error %v", err)
-	}
-
-	// TODO: Add validation that thumbnail indeed has the face in it. 
-	// Run face detection on thumbnail again?
-	t.Logf("Check generated file %v", dstPath)
-
-}
 
 func TestResizeImageTall(t *testing.T) {
 	pwd, _ := os.Getwd()
 	source := path.Join(pwd, "test", "testimagetall.jpg")
 	destination := testOutputPath("testimagetall_thumb.jpg")
 
-	runTestImage(source, destination, t)
+	runTestImage(source, destination, 1, t)
 }
 
 func TestResizeImageWide(t *testing.T) {
@@ -68,7 +51,7 @@ func TestResizeImageWide(t *testing.T) {
 	source := path.Join(pwd, "test", "testimagewide.jpg")
 	destination := testOutputPath("testimagewide_thumb.jpg")
 
-	runTestImage(source, destination, t)
+	runTestImage(source, destination, 1, t)
 }
 
 func TestResizeImageManyPeople(t *testing.T) {
@@ -76,7 +59,7 @@ func TestResizeImageManyPeople(t *testing.T) {
 	source := path.Join(pwd, "test", "testimagemany.jpg")
 	destination := testOutputPath("testimagemany_thumb.jpg")
 
-	runTestImage(source, destination, t)
+	runTestImage(source, destination, 12, t)
 }
 
 
@@ -85,7 +68,18 @@ func TestResizeImageNoPeople(t *testing.T) {
 	source := path.Join(pwd, "test", "testimagenone.jpg")
 	destination := testOutputPath("testimagenone_thumb.jpg")
 
-	runTestImage(source, destination, t)
+	runTestImage(source, destination, 0, t)
+}
+
+func TestResizeImageNoFaceDetection(t *testing.T) {
+	pwd, _ := os.Getwd()
+	source := path.Join(pwd, "test", "testimagetall.jpg")
+	destination := testOutputPath("testimagemnodetection_thumb.jpg")
+	result, _ := ResizeImage(nil, source, destination, 200)
+
+	if result.FacesCount != 0 {
+		t.Errorf("Expected face count 0 did not match actual %v", result.FacesCount)
+	}
 }
 
 func testOutputPath(fileName string) string {
@@ -97,4 +91,25 @@ func testOutputPath(fileName string) string {
 	}
 
 	return path.Join(destination, fileName)
+}
+
+func runTestImage(srcPath, dstPath string, expectedFaceCount int, t *testing.T) {
+	pwd, _ := os.Getwd()
+	cascadeFile := path.Join(pwd, "test", "facefinder")
+
+	fd := GetFaceDetector(cascadeFile, -1, -1)
+
+	result, err := ResizeImage(fd, srcPath, dstPath, 200)
+
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+
+	if result.FacesCount != expectedFaceCount {
+		t.Errorf("Expected face count %v did not match actual %v", expectedFaceCount, result.FacesCount)
+	}
+	// TODO: Add validation that thumbnail indeed has the face in it. 
+	// Run face detection on thumbnail again?
+	t.Logf("Check generated file %v", dstPath)
+
 }
