@@ -1,6 +1,7 @@
 package facethumbnail
 
 import (
+	"fmt"
 	"image"
 	"io/ioutil"
 
@@ -16,11 +17,23 @@ type FaceDetector struct {
 	shiftFactor  float64
 	scaleFactor  float64
 	iouThreshold float64
+
+	initialized bool
 }
 
-// GetFaceDetector returns an instance of facedetector initialized with a cascadefile with expected minimum and
-// maximum size of the face. min and max can be -1 to use default values
-func GetFaceDetector(cascadeFile string, minSize, maxSize int) *FaceDetector {
+// GetFaceDetector returns an instance of facedetector with path to binary cascade file
+func GetFaceDetector(cascadeFile string) *FaceDetector {
+	fd := &FaceDetector{}
+	fd.cascadeFile = cascadeFile
+	return fd
+}
+
+// Init initializes facedetector with a cascadefile with expected minimum and maximum size of the face.
+// min and max can be -1 to use default values
+func (fd *FaceDetector) Init(minSize, maxSize int) error {
+	if fd.initialized {
+		return fmt.Errorf("Already initialized")
+	}
 
 	if minSize <= 0 {
 		minSize = 20
@@ -30,17 +43,17 @@ func GetFaceDetector(cascadeFile string, minSize, maxSize int) *FaceDetector {
 		maxSize = 1000
 	}
 
-	fd := &FaceDetector{
-		angle:        0.0,
-		cascadeFile:  cascadeFile,
-		minSize:      minSize,
-		maxSize:      maxSize,
-		shiftFactor:  0.1,
-		scaleFactor:  1.1,
-		iouThreshold: 0.2,
-	}
+	fd.angle = 0.0
 
-	return fd
+	fd.minSize = minSize
+	fd.maxSize = maxSize
+	fd.shiftFactor = 0.1
+	fd.scaleFactor = 1.1
+	fd.iouThreshold = 0.2
+
+	fd.initialized = true
+
+	return nil
 }
 
 // DetectFacesInImageFile detect faces in a image file

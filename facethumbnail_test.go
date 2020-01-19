@@ -12,7 +12,8 @@ func TestDetectFacesInImageFile(t *testing.T) {
 	source := path.Join(pwd, "test", "testimagetall.jpg")
 	cascadeFile := path.Join(pwd, "test", "facefinder")
 
-	fd := GetFaceDetector(cascadeFile, -1, -1)
+	fd := GetFaceDetector(cascadeFile)
+	fd.Init(-1, -1)
 	faces, err := fd.DetectFacesInImageFile(source)
 
 	if err != nil {
@@ -36,7 +37,6 @@ func TestDetectFacesInImageFile(t *testing.T) {
 		t.Errorf("Detected face %v is not correct", face)
 	}
 }
-
 
 func TestResizeImageTall(t *testing.T) {
 	pwd, _ := os.Getwd()
@@ -97,7 +97,8 @@ func runTestImage(srcPath, dstPath string, expectedFaceCount int, t *testing.T) 
 	pwd, _ := os.Getwd()
 	cascadeFile := path.Join(pwd, "test", "facefinder")
 
-	fd := GetFaceDetector(cascadeFile, -1, -1)
+	fd := GetFaceDetector(cascadeFile)
+	fd.Init(-1, -1)
 
 	result, err := ResizeImage(fd, srcPath, dstPath, 200)
 
