@@ -1,6 +1,5 @@
 package facethumbnail
 
-// TODO: Add the thumbnail logic
 import (
 	"fmt"
 	"image"
@@ -8,17 +7,18 @@ import (
 	"log"
 	"os"
 
-	//"github.com/nfnt/resize"
 	"github.com/nfnt/resize"
 	"github.com/oliamb/cutter"
 )
 
+// ResizeResult contains details of the resizing done
 type ResizeResult struct {
 	Center     image.Point
 	FacesCount int
 }
 
-// ResizeImage uses an instance of FaceDetector to detect face in srcPath and generates a thumbnail of size x size in dstPath
+// ResizeImage uses an instance of FaceDetector to detect face in srcPath and generates a thumbnail of sizexsize in dstPath
+// If no facedetector is given or no faces are detected, then the center of image is used for the thumbnail
 func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) (ResizeResult, error) {
 	var result ResizeResult
 	file, err := os.Open(srcPath)
@@ -34,7 +34,7 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) (ResizeRe
 
 	file.Close()
 
-	log.Printf("Opened image %v or size (%v,%v), cropping to (%v,%v)", srcPath, img.Bounds().Dx(), img.Bounds().Dy(), size, size)
+	log.Printf("Opened image %v of size (%v,%v), cropping to (%v,%v)", srcPath, img.Bounds().Dx(), img.Bounds().Dy(), size, size)
 
 	// default center is mid-point of image
 	var faceCenter image.Point = image.Pt(img.Bounds().Dx()/2, img.Bounds().Dy()/2)
@@ -49,10 +49,14 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) (ResizeRe
 
 		nFaces := len(faces)
 		result.FacesCount = nFaces
-		log.Printf("Detect %v faces", nFaces)
+		log.Printf("Detected %v faces", nFaces)
 
 		largestFaceSize := 0
 
+		// Iterate through the faces and find the largest detected face and use that
+		//
+		// NOTE: Tried other mechanisms like union of all detected faces and taking the center of it
+		// but that did not yield good results (e.g. picked empty space in-between two persons in a portrait)
 		for _, face := range faces {
 			log.Printf("Detected face %v", face)
 			faceSize := face.Dx() * face.Dy()
@@ -67,17 +71,18 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) (ResizeRe
 		}
 	}
 
+	// At this point faceCenter is either the center of the source image or the center of the
+	// largest face detected in the image
 	log.Printf("Using faceCenter %v", faceCenter)
 	result.Center = faceCenter
 
-	// In the code below we are attempting to find a square whose center is close to the center of the found face
+	// In the code below we are attempting to find a square whose center is close to the center of the detected face
 
 	// Generate a square image of sizeSquare which is equal to the width or height of the image
 	// whichever is smaller
 	sizeSquare := min(img.Bounds().Dx(), img.Bounds().Dy())
 
 	// X, Y are the left top corner of cropped image of size sizeSquare
-
 	// Attempt to use x so that facecenter.X is exactly at the center of the sizeSquare image
 	x := faceCenter.X - (sizeSquare / 2)
 	// now if x is negative then the center was far to the left, so use x so that we take all of the
@@ -104,15 +109,15 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) (ResizeRe
 		Width:  sizeSquare,
 		Height: sizeSquare,
 		Anchor: anchor,
-		Mode:   cutter.TopLeft, // optional, default value
+		Mode:   cutter.TopLeft,
 	}
 
 	croppedImg, err := cutter.Crop(img, config)
 
 	log.Printf("Log config %+v", config)
 
+	// Now resize the cropped square image to target size
 	resizedImage := resize.Resize(size, size, croppedImg, resize.Lanczos3)
-
 	out, err := os.Create(dstPath)
 	if err != nil {
 		return result, err
