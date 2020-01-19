@@ -8,7 +8,7 @@ import (
 	pigo "github.com/esimov/pigo/core"
 )
 
-// faceDetector struct contains Pigo face detector general settings.
+// FaceDetector struct contains Pigo face detector general settings.
 type FaceDetector struct {
 	angle        float64
 	cascadeFile  string
