@@ -79,6 +79,15 @@ func TestResizeImageManyPeople(t *testing.T) {
 	runTestImage(source, destination, t)
 }
 
+
+func TestResizeImageNoPeople(t *testing.T) {
+	pwd, _ := os.Getwd()
+	source := path.Join(pwd, "test", "testimagenone.jpg")
+	destination := testOutputPath("testimagenone_thumb.jpg")
+
+	runTestImage(source, destination, t)
+}
+
 func testOutputPath(fileName string) string {
 	pwd, _ := os.Getwd()
 	destination := path.Join(pwd, "testoutput")

@@ -31,7 +31,7 @@ func ResizeImage(fd *FaceDetector, srcPath, dstPath string, size uint) error {
 	log.Printf("Opened image %v or size (%v,%v), cropping to (%v,%v)", srcPath, img.Bounds().Dx(), img.Bounds().Dy(), size, size)
 
 	// default center is mid-point of image
-	var faceCenter image.Point = image.Pt(image.Black.Bounds().Dx()/2, image.Black.Bounds().Dy()/2)
+	var faceCenter image.Point = image.Pt(img.Bounds().Dx()/2, img.Bounds().Dy()/2)
 
 	// Now if a face detector is provided and if that detector detects a face use
 	// the center of the detected face to center the thumbnail image
