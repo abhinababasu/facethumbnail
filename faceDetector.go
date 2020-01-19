@@ -8,8 +8,8 @@ import (
 	pigo "github.com/esimov/pigo/core"
 )
 
-// FaceDetector struct contains Pigo face detector general settings.
-type FaceDetector struct {
+// FDetect struct contains Pigo face detector general settings.
+type FDetect struct {
 	angle        float64
 	cascadeFile  string
 	minSize      int
@@ -22,15 +22,15 @@ type FaceDetector struct {
 }
 
 // GetFaceDetector returns an instance of facedetector with path to binary cascade file
-func GetFaceDetector(cascadeFile string) *FaceDetector {
-	fd := &FaceDetector{}
+func GetFaceDetector(cascadeFile string) *FDetect {
+	fd := &FDetect{}
 	fd.cascadeFile = cascadeFile
 	return fd
 }
 
 // Init initializes facedetector with a cascadefile with expected minimum and maximum size of the face.
 // min and max can be -1 to use default values
-func (fd *FaceDetector) Init(minSize, maxSize int) error {
+func (fd *FDetect) Init(minSize, maxSize int) error {
 	if fd.initialized {
 		return fmt.Errorf("Already initialized")
 	}
@@ -57,7 +57,7 @@ func (fd *FaceDetector) Init(minSize, maxSize int) error {
 }
 
 // DetectFacesInImageFile detect faces in a image file
-func (fd *FaceDetector) DetectFacesInImageFile(sourceFilePath string) ([]image.Rectangle, error) {
+func (fd *FDetect) DetectFacesInImageFile(sourceFilePath string) ([]image.Rectangle, error) {
 
 	faces, err := fd.detectFaces(sourceFilePath)
 	if err != nil {
@@ -70,7 +70,7 @@ func (fd *FaceDetector) DetectFacesInImageFile(sourceFilePath string) ([]image.R
 }
 
 // detectFaces run the detection algorithm over the provided source image.
-func (fd *FaceDetector) detectFaces(source string) ([]pigo.Detection, error) {
+func (fd *FDetect) detectFaces(source string) ([]pigo.Detection, error) {
 	src, err := pigo.GetImage(source)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (fd *FaceDetector) detectFaces(source string) ([]pigo.Detection, error) {
 }
 
 // drawFaces marks the detected faces with a rectangle.
-func (fd *FaceDetector) generateFaceRects(faces []pigo.Detection) []image.Rectangle {
+func (fd *FDetect) generateFaceRects(faces []pigo.Detection) []image.Rectangle {
 	var qThresh float32 = 5.0
 	var rects []image.Rectangle
 

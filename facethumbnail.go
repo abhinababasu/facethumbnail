@@ -12,8 +12,8 @@ import (
 )
 
 // faceDetector interface defines face detection interface ResizeImage expects
-type faceDetector interface {
-	// Init initializes the face detector with maximum and minimum size of expected face 
+type FaceDetector interface {
+	// Init initializes the face detector with maximum and minimum size of expected face
 	Init(minSize, maxSize int) error
 
 	// DetectFacesInImageFile detects a list of faces in an image file
@@ -28,7 +28,7 @@ type ResizeResult struct {
 
 // ResizeImage uses an instance of FaceDetector to detect face in srcPath and generates a thumbnail of sizexsize in dstPath
 // If no facedetector is given or no faces are detected, then the center of image is used for the thumbnail
-func ResizeImage(fd faceDetector, srcPath, dstPath string, size uint) (ResizeResult, error) {
+func ResizeImage(fd FaceDetector, srcPath, dstPath string, size uint) (ResizeResult, error) {
 	var result ResizeResult
 	file, err := os.Open(srcPath)
 	if err != nil {
