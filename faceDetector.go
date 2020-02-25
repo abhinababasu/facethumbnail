@@ -17,7 +17,7 @@ type FDetect struct {
 	shiftFactor  float64
 	scaleFactor  float64
 	iouThreshold float64
-
+	classifier   *pigo.Pigo
 	initialized bool
 }
 
@@ -50,6 +50,19 @@ func (fd *FDetect) Init(minSize, maxSize int) error {
 	fd.shiftFactor = 0.1
 	fd.scaleFactor = 1.1
 	fd.iouThreshold = 0.2
+
+	cascadeFile, err := ioutil.ReadFile(fd.cascadeFile)
+	if err != nil {
+		return err
+	}
+
+	p := pigo.NewPigo()
+	// Unpack the binary file. This will return the number of cascade trees,
+	// the tree depth, the threshold and the prediction from tree's leaf nodes.
+	fd.classifier, err = p.Unpack(cascadeFile)
+	if err != nil {
+		return err
+	}
 
 	fd.initialized = true
 
@@ -94,25 +107,12 @@ func (fd *FDetect) detectFaces(source string) ([]pigo.Detection, error) {
 		ImageParams: *imgParams,
 	}
 
-	cascadeFile, err := ioutil.ReadFile(fd.cascadeFile)
-	if err != nil {
-		return nil, err
-	}
-
-	p := pigo.NewPigo()
-	// Unpack the binary file. This will return the number of cascade trees,
-	// the tree depth, the threshold and the prediction from tree's leaf nodes.
-	classifier, err := p.Unpack(cascadeFile)
-	if err != nil {
-		return nil, err
-	}
-
 	// Run the classifier over the obtained leaf nodes and return the detection results.
 	// The result contains quadruplets representing the row, column, scale and detection score.
-	faces := classifier.RunCascade(cParams, fd.angle)
+	faces := fd.classifier.RunCascade(cParams, fd.angle)
 
 	// Calculate the intersection over union (IoU) of two clusters.
-	faces = classifier.ClusterDetections(faces, fd.iouThreshold)
+	faces = fd.classifier.ClusterDetections(faces, fd.iouThreshold)
 
 	return faces, nil
 }
