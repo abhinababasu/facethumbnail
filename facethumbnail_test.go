@@ -62,7 +62,6 @@ func TestResizeImageManyPeople(t *testing.T) {
 	runTestImage(source, destination, 12, t)
 }
 
-
 func TestResizeImageNoPeople(t *testing.T) {
 	pwd, _ := os.Getwd()
 	source := path.Join(pwd, "test", "testimagenone.jpg")
@@ -80,6 +79,11 @@ func TestResizeImageNoFaceDetection(t *testing.T) {
 	if result.FacesCount != 0 {
 		t.Errorf("Expected face count 0 did not match actual %v", result.FacesCount)
 	}
+}
+
+func TestResizeToAspectRatio(t *testing.T) {
+	runTestAspectRatio("testverticalscale.jpg", "testverticalscale_scaled.jpg", t)
+	runTestAspectRatio("testhorizontalscale.jpg", "testhorizontalscale_scaled.jpg", t)
 }
 
 func testOutputPath(fileName string) string {
@@ -109,8 +113,29 @@ func runTestImage(srcPath, dstPath string, expectedFaceCount int, t *testing.T) 
 	if result.FacesCount != expectedFaceCount {
 		t.Errorf("Expected face count %v did not match actual %v", expectedFaceCount, result.FacesCount)
 	}
-	// TODO: Add validation that thumbnail indeed has the face in it. 
+	// TODO: Add validation that thumbnail indeed has the face in it.
 	// Run face detection on thumbnail again?
 	t.Logf("Check generated file %v", dstPath)
 
+}
+
+func runTestAspectRatio(src, dst string, t *testing.T) {
+	pwd, _ := os.Getwd()
+	srcPath := path.Join(pwd, "test", src)
+	dstPath := testOutputPath(dst)
+
+	cascadeFile := path.Join(pwd, "test", "facefinder")
+
+	fd := GetFaceDetector(cascadeFile)
+	fd.Init(-1, -1)
+
+	_, err := ResizeToAspectRatio(fd, srcPath, dstPath, uint(9), uint(16))
+
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+
+	// TODO: Add validation that thumbnail indeed has the face in it.
+	// Run face detection on thumbnail again?
+	t.Logf("Check generated file %v", dstPath)
 }
